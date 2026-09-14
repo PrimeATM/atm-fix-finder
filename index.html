@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATM Fix Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
+<style>
+:root{--ink:#0d1b2a;--ink2:#374a5c;--muted:#6b7f93;--bg:#f0f4f8;--panel:#fff;--card:#f7f9fb;--border:#dce4eb;--border2:#c8d4dd;--blue:#0761b0;--blue-bg:#e8f3fc;--blue-border:#b5d4f4;--green:#0d6e3f;--green-bg:#e6f5ee;--amber:#92500c;--amber-bg:#fdf3e3;--amber-border:#f0c57a;--red:#9b1c1c;--red-bg:#fdf2f2;--mono:'JetBrains Mono',monospace;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;min-height:100vh}
+.header{background:var(--panel);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.logo{width:36px;height:36px;background:var(--ink);color:#fff;border-radius:9px;display:grid;place-items:center;font-size:11px;font-weight:700;flex-shrink:0}
+.header-text h1{font-size:15px;font-weight:700}
+.header-text p{font-size:11px;color:var(--muted)}
+.priv{margin-left:auto;background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px}
+.main{max-width:700px;margin:0 auto;padding:20px 16px 60px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px}
+.scan-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.scan-icon{width:42px;height:42px;background:var(--card);border:1px solid var(--border);border-radius:11px;display:grid;place-items:center;font-size:22px;color:var(--muted);flex-shrink:0}
+.scan-header h2{font-size:14px;font-weight:600;margin-bottom:2px}
+.scan-header p{font-size:12px;color:var(--muted);line-height:1.4}
+.scan-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.scan-btn{display:flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size:12px;font-weight:600;padding:10px;border:1px solid var(--border2);border-radius:var(--r);background:var(--card);color:var(--ink);cursor:pointer;transition:background .12s}
+.scan-btn:hover{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+.preview-wrap{margin-top:12px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.preview-img{position:relative;background:#000;max-height:200px;display:flex;align-items:center;justify-content:center}
+.preview-img img{width:100%;max-height:200px;object-fit:contain}
+.btn-rm{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;font-size:12px;cursor:pointer;display:grid;place-items:center}
+.scan-status{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+.scan-result-wrap{padding:10px 14px;font-size:12px;border-top:1px solid var(--border);line-height:1.5;color:var(--ink2)}
+.conf-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-bottom:4px}
+.conf-badge.high{background:var(--green-bg);color:var(--green)}
+.conf-badge.medium{background:var(--amber-bg);color:var(--amber)}
+.conf-badge.low{background:var(--red-bg);color:var(--red)}
+.or-row{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);font-weight:600}
+.or-line{flex:1;height:1px;background:var(--border)}
+.field-label{font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+select,input,textarea{font:inherit;font-size:13px;color:var(--ink);width:100%;border:1px solid var(--border2);border-radius:var(--r);padding:9px 12px;background:#fff;-webkit-appearance:none;appearance:none;transition:border-color .15s,box-shadow .15s}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7f93' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:28px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(7,97,176,.1)}
+input.err{border-color:var(--red)}
+textarea{height:70px;resize:vertical}
+.opt-label{font-weight:400;color:var(--muted)}
+.suggest-box{border:1px solid var(--blue-border);border-radius:var(--r);overflow:hidden;margin-top:4px}
+.suggest-item{padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:background .1s}
+.suggest-item:last-child{border-bottom:none}
+.suggest-item:hover{background:var(--blue-bg)}
+.suggest-code{font-family:var(--mono);font-size:12px;font-weight:500}
+.suggest-title{font-size:11px;color:var(--muted);max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-primary{width:100%;font:inherit;font-size:14px;font-weight:700;padding:13px;border:none;border-radius:var(--r);background:var(--ink);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.err-hint{font-size:11px;color:var(--red);text-align:center;padding:4px 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.spin-dark{width:14px;height:14px;border:1.5px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+.result-card{display:none;background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.result-card.show{display:block}
+.result-top{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.chip-code{font-family:var(--mono);font-size:11px;font-weight:500;background:var(--ink);color:#fff;padding:2px 8px;border-radius:5px}
+.chip-brand{font-size:11px;background:var(--card);color:var(--muted);border:1px solid var(--border);padding:2px 8px;border-radius:5px}
+.chip-verified{font-size:10px;background:var(--green-bg);color:var(--green);font-weight:700;padding:2px 8px;border-radius:999px}
+.chip-partial{font-size:10px;background:var(--amber-bg);color:var(--amber);font-weight:700;padding:2px 8px;border-radius:999px}
+.result-title{font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.result-summary{font-size:12px;color:var(--ink2);line-height:1.5;max-width:52ch}
+.btn-new{font:inherit;font-size:12px;font-weight:600;padding:8px 14px;border:1px solid var(--border2);border-radius:var(--r);background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.btn-new:hover{background:var(--border)}
+.warn-bar{margin:0 20px 14px;padding:10px 14px;background:var(--amber-bg);border:1px solid var(--amber-border);border-left:4px solid #d97706;border-radius:0 var(--r) var(--r) 0;font-size:12px;line-height:1.5}
+.warn-bar b{font-weight:700}
+.result-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px;padding:0 20px 14px}
+.r-panel{border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.r-panel-head{padding:7px 12px;background:var(--card);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.r-panel-body{padding:10px 12px}
+.r-panel-body ol,.r-panel-body ul{padding-left:16px}
+.r-panel-body li{font-size:12px;line-height:1.55;margin-bottom:7px;color:var(--ink2)}
+.r-panel-body li:last-child{margin-bottom:0}
+.research-wrap{margin:0 20px 20px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r);padding:14px 16px}
+.research-wrap h4{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.research-wrap .src-text{font-size:11px;color:var(--ink2);line-height:1.45;margin-bottom:10px}
+.research-links{display:flex;flex-wrap:wrap;gap:7px}
+.research-links a{color:var(--blue);background:#fff;border:1px solid var(--blue-border);padding:7px 12px;border-radius:var(--r);font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:5px}
+.research-links a:hover{background:var(--blue-border)}
+.foot-note{text-align:center;font-size:11px;color:var(--muted);padding:0 20px 20px;line-height:1.4}
+@media(max-width:600px){.field-grid,.result-grid{grid-template-columns:1fr}.result-top{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">AF</div>
+  <div class="header-text"><h1>ATM Fix Finder</h1><p>Error code diagnostics and repair guides</p></div>
+  <span class="priv">Private tool</span>
+</div>
+<div class="main">
+  <div class="card">
+    <div class="scan-header">
+      <div class="scan-icon"><i class="ti ti-camera"></i></div>
+      <div><h2>Scan the ATM screen</h2><p>Take a photo or upload a screenshot — reads the error code automatically</p></div>
+    </div>
+    <div class="scan-btns">
+      <button class="scan-btn" id="btnCam"><i class="ti ti-camera"></i> Take photo</button>
+      <button class="scan-btn" id="btnUp"><i class="ti ti-upload"></i> Upload image</button>
+    </div>
+    <div id="previewWrap" style="display:none" class="preview-wrap">
+      <div class="preview-img"><img id="previewImg" alt="ATM screen"><button class="btn-rm" id="btnRm">✕</button></div>
+      <div id="scanStatus" class="scan-status"><div class="spin-dark"></div><span>Reading error code from image…</span></div>
+      <div id="scanResultWrap" style="display:none" class="scan-result-wrap"></div>
+    </div>
+  </div>
+  <div class="or-row"><div class="or-line"></div><span id="orLabel">or enter manually</span><div class="or-line"></div></div>
+  <div class="card">
+    <div class="field-grid">
+      <div><div class="field-label">Manufacturer</div>
+        <select id="brand">
+          <option value="Genmega">Genmega</option>
+          <option value="Hantle">Hantle</option>
+          <option value="Hyosung">Hyosung</option>
+          <option value="Nautilus">Nautilus Hyosung</option>
+          <option value="Triton">Triton</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div><div class="field-label">Error code</div>
+        <input id="codeInput" placeholder="e.g. D2511 or just 2511" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+    </div>
+    <div id="suggestBox" style="display:none;margin-top:4px" class="suggest-box"></div>
+    <div style="margin-top:10px">
+      <div class="field-label">What happened? <span class="opt-label">(optional)</span></div>
+      <textarea id="symptom" placeholder="e.g. customer tried withdrawal, screen says dispenser error, no cash came out…"></textarea>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn-primary" id="btnLookup"><i class="ti ti-search"></i> Build repair guide</button>
+      <div id="errHint" style="display:none" class="err-hint">Enter an error code first.</div>
+    </div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-top">
+      <div>
+        <div class="chip-row"><span class="chip-code" id="chipCode"></span><span class="chip-brand" id="chipBrand"></span><span id="chipVerified" style="display:none" class="chip-verified">Verified</span><span id="chipPartial" style="display:none" class="chip-partial">Partial match</span></div>
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-summary" id="resultSummary"></div>
+      </div>
+      <button class="btn-new" id="btnNew">New lookup</button>
+    </div>
+    <div class="warn-bar" style="margin-top:14px"><b>Before opening the machine:</b> Follow your company's cash-control and power-down procedure. Do not force a cassette, shutter, or door.</div>
+    <div class="result-grid">
+      <div class="r-panel"><div class="r-panel-head">What to do</div><div class="r-panel-body"><ol id="listChecks"></ol></div></div>
+      <div class="r-panel"><div class="r-panel-head">Likely cause</div><div class="r-panel-body"><ul id="listAreas"></ul></div></div>
+      <div class="r-panel"><div class="r-panel-head">Bring with you</div><div class="r-panel-body"><ul id="listTools"></ul></div></div>
+    </div>
+    <div class="research-wrap">
+      <h4>Sources &amp; research</h4>
+      <p class="src-text" id="srcText"></p>
+      <div class="research-links">
+        <a id="linkWeb" target="_blank" rel="noopener"><i class="ti ti-world"></i> Web solutions</a>
+        <a id="linkVideo" target="_blank" rel="noopener"><i class="ti ti-brand-youtube"></i> Repair videos</a>
+        <a id="linkManual" target="_blank" rel="noopener"><i class="ti ti-file-text"></i> Manufacturer manual</a>
+      </div>
+    </div>
+    <p class="foot-note">Manufacturer manual and processor support are the authority. Use this guide for first-pass triage only.</p>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+<input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
+
+<script>
+const el = id => document.getElementById(id);
+
+// ─── GENMEGA / HANTLE (same software platform) ───────────────────────────────
+const GM = {
+  'D2511':{t:'No host connection',s:'ATM sent its request but nothing answered — no internet path to the host processor.',a:['No internet at site','Bad Ethernet cable','Stale DHCP / wrong IP'],c:['Power-cycle in order: ATM off → unplug modem/router 10 s → plug modem/router back in, wait for full boot → power ATM on.','In operator menu: System Setup → Device Setup → ATM TCP/IP Setup. Switch DHCP off, save, switch back on, save. This forces a fresh IP lease.','Physically trace the Ethernet cable from the ATM mainboard to the modem/router. Unplug both ends and firmly re-seat. Swap for a known-good cable if available.','Run the built-in comms test: on the keypad press Enter → Clear → Cancel → 7 → 8 → 6. Screen should briefly show "Configuration" then return to welcome screen if host is reached.','If still failing: confirm the ATM has a valid IP address in TCP/IP Setup. Call your processor with the Terminal ID — they can check host-side.'],to:['Spare Cat5/Cat6 Ethernet cable','Processor phone number and Terminal ID'],src:'Genmega Error Code List — D2511: "Communication error while Sending."'},
+  'D2510':{t:'Send timeout',s:'ATM timed out waiting for a response after sending — host did not reply in time.',a:['Internet outage at site','Host processor down','Firewall blocking outbound traffic'],c:['Check if internet is working at the site (test with a phone or laptop on the same network).','Power-cycle the modem/router then restart the ATM.','Confirm Host IP address is correct in operator menu → Host Setup → Host Address.','Call your processor — they can check whether the host is responding to your Terminal ID.'],to:['Processor contact number','Terminal ID and Host IP'],src:'Genmega Error Code List — D2510: "Timeout while Sending."'},
+  'D2513':{t:'Receive timeout',s:'ATM connected but host did not send a full response in time.',a:['Host processor slow or down','Unstable internet connection','Port blocked by firewall'],c:['Power-cycle modem/router and restart ATM.','Verify internet is stable at the site — run a speed test or ping test on another device.','Contact processor — ask if they are experiencing host delays or maintenance on your Terminal ID.','Check no firewall or router rule is dropping return packets. Port used is typically 443 or a processor-specific TCP port.'],to:['Processor contact number'],src:'Genmega Error Code List — D2513: "Timeout while Receiving."'},
+  'D2500':{t:'Cannot connect to host',s:'ATM failed to establish any connection to the host processor.',a:['Internet down','Wrong Host IP programmed','Terminal ID not active'],c:['Verify internet is working at the site.','Power-cycle modem/router, wait 30 s, then restart ATM.','In operator menu → Host Setup → Host Address: confirm Host IP and port match what your processor gave you.','Call processor with Terminal ID — confirm the terminal is active in their system.'],to:['Processor setup sheet with Host IP and port'],src:'Genmega Error Code List — D2500: "Cannot connect to the host."'},
+  'CDN04':{t:'CDU connection failure',s:'Mainboard lost communication with the Cash Dispenser Unit (CDU). Usually a cable seating issue or interference.',a:['CDU-to-mainboard ribbon/data cable loose','External interference (neon signs, refrigerators)'],c:['Power off ATM.','Open the top bezel and locate the ribbon cable running from the CDU to the mainboard. Unplug it from both ends, inspect pins for damage, then firmly re-seat both ends until they click.','If available, spray a small amount of electrical contact cleaner on the connector terminals and re-seat.','Power ATM back on. If the error clears, monitor — a single CDN04 is often interference. Repeated occurrences = bad cable or CDU board.','Check for interference sources nearby: neon signs, refrigerators, bright fluorescent lights. Move the ATM or shield the cable if needed.'],to:['Electrical contact cleaner','Flashlight to inspect connectors'],src:'Genmega Error Code List — CDN04: "CDU Connection Failure."'},
+  '20001':{t:'Cassette not detected',s:'ATM cannot detect a cassette in the dispenser — micro-switch or seating issue.',a:['Cassette not fully seated','Micro-switch damaged or misaligned','White plastic retaining clips broken'],c:['Remove the cassette completely. Inspect the cassette and the slot for debris or damage.','Re-insert the cassette firmly and squarely until you hear and feel it lock. Do not force.','Locate the micro-switch on the inside left wall of the dispenser bay. It should be pressed by the cassette when inserted. If it is bent or not actuating, carefully adjust it forward.','Inspect the two white plastic retaining clips inside the dispenser. If either is broken, the cassette will not seat — replace the clips.','Power-cycle after re-seating and re-test.'],to:['Flashlight','Replacement cassette retaining clips'],src:'Genmega Error Code List — 20001: "Unable To Detect Cassette."'},
+  '20002':{t:'Low cash warning',s:'Cassette reached the low-cash threshold (~75 bills). Warning only — ATM is still working.',a:['Cassette running low on bills','Low Cash Warning setting enabled'],c:['Open the vault and count or refill the cassette. After loading, use Add Cassette in the Settlement menu to update the bill count.','If the machine is normally stocked low and this fires constantly: Operator menu → Transaction Setup → Low Cash Warning → Disable.'],to:['Cash for replenishment'],src:'Genmega Error Code List — 20002: "Low Cash warning."'},
+  '20003':{t:'Reject bin full',s:'Reject bin is full or the full-detection sensor is triggered.',a:['Reject bin full','AP/BIOS/CDU ROM version mismatch'],c:['Open the vault. Open and empty the reject bin — count rejected notes and record them for balancing.','If the reject bin was already empty when the error occurred: go to operator menu → Settlement → Cassette Total and run it. This resets the reject counter.','If error returns immediately on an empty bin: check that AP, BIOS, and CDU ROM versions are compatible. Version mismatch can cause false reject-full errors.'],to:['Flashlight','Notepad to record rejected bill count'],src:'Genmega Error Code List — 20003: "Reject Bin is Full."'},
+  '20004':{t:'Vault door open',s:'Circuit between the mainboard and vault door switch is open — door is detected as open.',a:['Vault door not fully latched','Door switch not actuating','Door switch wiring loose'],c:['Push the vault door firmly closed and listen for the latch to engage. Try re-opening and closing more firmly.','Locate the door switch — a white plunger switch in the upper-left corner of the vault or along the front edge of the dispenser tray. The cassette/door should press the plunger when closed. If the plunger is stiff or not returning, clean or replace the switch.','Inspect the 2-wire black-and-white connector at the rear of the mainboard. Unplug and re-seat it firmly.','If the door closes but the switch still does not trip: slide the vault switch slightly forward to improve door contact, or replace the switch.'],to:['Flashlight','Replacement vault door switch if available'],src:'Genmega Error Code List — 20004: "Vault Door is Open."'},
+  '20010':{t:'Receipt paper jam',s:'Paper jammed in the receipt printer.',a:['Jammed paper in the path','Wrong paper weight (must be 21 lb)','Paper loaded incorrectly'],c:['Press the green-stickered release tab at the front of the printer to open the paper drawer.','Carefully remove all jammed paper — use a business card or stiff paper to poke out fragments. Do NOT use metal tools.','If you cannot reach the jam from the front, remove the printer from the ATM by unplugging its connector and sliding it out.','Reload paper (21 lb only — thinner paper jams more). Ensure the leading edge is straight and feeds under the roller correctly.','Close the drawer, press the printer reset button if present, and test print from operator menu.'],to:['Business card or stiff paper (to clear jam — no metal)','Correct 21 lb paper roll'],src:'Genmega Error Code List — 20010: "Receipt Paper Jam."'},
+  '20012':{t:'Receipt printer feed lever open',s:'Printer head feed lever is open or not fully latched.',a:['Feed lever not fully closed','Lever latch worn or broken'],c:['Open the printer area and locate the feed lever — it typically has a green or colored release tab. Press it firmly closed until it clicks.','If the lever appears closed but the error persists: open it, inspect the latch mechanism for debris or damage, then close again.','Try pressing the printer reset button after closing.','If the lever will not stay closed, the printer mechanism may require service.'],to:['Flashlight'],src:'Genmega Error Code List — 20012: "Receipt printer feed lever open."'},
+  '20013':{t:'Receipt paper empty',s:'Printer is out of paper or paper is not loaded correctly.',a:['Paper roll empty','Paper loaded wrong','Paper sensor blocked'],c:['Open the printer and replace or reload the paper roll. Ensure the leading edge is feeding correctly under the head roller and out through the slot.','If paper is loaded but error persists: check for a jammed fragment or an obstruction at the paper sensor.','Press the printer reset button and test print from operator menu.','If error continues with fresh paper: the paper sensor may need cleaning or replacement.'],to:['Correct paper roll for the model'],src:'Genmega Error Code List — 20013: "Receipt paper is empty."'},
+  '20014':{t:'Printer overheated',s:'Printer thermal head temperature is too high — usually after printing a very long journal.',a:['Extended print job','Printer head fault'],c:['Wait 5–10 minutes for the printer to cool down.','Press the printer reset button.','Try a short test print from operator menu. If it succeeds, the printer is fine — heat was the cause.','If the overheat error appears immediately on a short print, the printer head may be failing and needs service.'],to:['Time (to allow cooling)'],src:'Genmega Error Code List — 20014: "Thermal printer is overheated."'},
+  'C0041':{t:'5 dispense attempts failed',s:'CDU tried to pull a bill from the cassette 5 times and failed every time — cash quality, rollers, or belt issue.',a:['Poor quality or damaged bills','Worn pick rollers','Loose or dirty CDU belts','Wrong denomination set in software'],c:['Remove the cassette. Fan through all bills and remove any torn, folded, damp, or heavily worn notes. Straighten and reload.','In operator menu → Transaction Setup: confirm the denomination setting matches the actual bills loaded.','Wipe the cassette pick rollers with isopropyl alcohol (rubbing alcohol) on a clean lint-free cloth. Let dry 60 seconds before reloading.','Inspect CDU belts: if a belt is loose, slipping off a roller, or visibly cracked, replace it. Clean good belts with IPA.','After cleaning, reload the cassette and run a test dispense from operator menu.'],to:['Isopropyl alcohol (IPA)','Lint-free cloths','Replacement CDU belts if available'],src:'Genmega Error Code List — C0041: "Tried to dispense notes more than 5 times."'},
+  'C0042':{t:'Note jam in dispenser',s:'A bill became jammed in the cash dispenser transport path.',a:['Bill stuck in transport path','Dust blocking a sensor (no physical jam)'],c:['Power off the ATM.','Open the vault. Carefully inspect the full transport path from the cassette exit to the dispenser opening. Remove any jammed bills gently — do not tear them.','If no physical jam is found, use compressed air to blow out all sensors (CS1 through CS15) — dust on a sensor triggers a false jam error.','Remove and re-seat all belts. Check that no belt has slipped off a roller and is blocking a sensor.','Power on and run a test dispense.'],to:['Flashlight','Compressed air can'],src:'Genmega Error Code List — C0042: "Note jam."'},
+  'C0043':{t:'Over 10 notes rejected in one transaction',s:'More than 10 notes were rejected during a single dispense — cash quality or sensor issue.',a:['Poor cash quality','Dirty cassette rollers','Sensor dust'],c:['Remove the cassette. Fan and inspect the bills — remove torn, folded, damp, or excessively worn notes. Reload with clean, crisp bills.','In operator menu → Reports → Reject Analysis: this shows why notes were rejected (long note, short note, double-detect, etc.). Use this to target your fix.','Clean cassette pick rollers and CDU transport rollers with IPA on a lint-free cloth.','Blow out CS1AB, CS15AB, CS31AB, CS41AB sensors with compressed air.','After cleaning, reload and run a test dispense.'],to:['Flashlight','IPA and lint-free cloths','Compressed air'],src:'Genmega Error Code List — C0043: "More than 10 notes rejected during one transaction."'},
+  'C0044':{t:'5 consecutive notes rejected',s:'5 notes were rejected in a row — usually cash quality or a dirty double-detect sensor.',a:['Worn or wrinkled bills','Dirty CS5 double-detect sensor','Worn cassette rollers'],c:['Remove cassette and inspect cash quality. Remove any worn, folded, or stiff bills.','Straighten and fan the remaining cash, then reload neatly aligned.','In operator menu → Reports → Reject Analysis: check if the rejection type is double-detect. If so, clean the CS5 double-detect sensor guide with compressed air.','Clean cassette and CDU rollers with IPA.','Run a test dispense.'],to:['Compressed air','IPA and lint-free cloths'],src:'Genmega Error Code List — C0044: "More than 5 notes rejected consecutively."'},
+  'C0047':{t:'Feed error — bill not picked from cassette',s:'Dispenser tried to pull a bill and timed out before getting one. Ranges from an empty cassette to worn rollers.',a:['Cassette empty','Worn or dirty pick rollers','CDU firmware out of date'],c:['First check: is the cassette empty? If so, reload and use Add Cassette in Settlement to update the count.','If cash is loaded: remove the cassette, wipe the pick rollers inside the cassette with IPA on a lint-free cloth. Also clean the CDU feed rollers.','Fan and re-align all bills before reloading — bills that are not neatly stacked cause mis-feeds.','If rollers appear glazed or smooth (no texture), they need replacement — cleaning will not restore grip on worn rollers.','Check CDU firmware version in diagnostics. If outdated, update per Genmega documentation — old firmware can cause intermittent feed errors.'],to:['IPA and lint-free cloths','Replacement pick roller kit'],src:'Genmega Error Code List — C0047: "Feed error — dispenser unable to pull a bill before timeout."'},
+  'C0030':{t:'CDU motor failure',s:'Main motor speed was outside spec — encoder wheel or motor sensor fault.',a:['CS8 encoder wheel sensor displaced','Encoder slit damaged or dirty','Main motor worn'],c:['Power off ATM.','Locate the CS8 encoder wheel sensor on the CDU — it reads a slotted wheel on the main motor shaft. Confirm the sensor bracket is seated correctly and the cable is connected.','Inspect the encoder slit wheel itself — clean it with a dry cloth or compressed air. If the wheel is cracked or a slot is damaged, the wheel needs replacement.','Power on and initialize. If the error clears, the encoder was the issue.','If the error persists with a good encoder and connections, the main motor is likely worn and needs replacement.'],to:['Flashlight','Compressed air','Replacement CS8 encoder sensor or main motor if available'],src:'Genmega Error Code List — C0030: "CDU motor failure."'},
+  'C0033':{t:'CDU encoder error',s:'CDU lost its programming data — usually caused by the CDU mainboard losing battery power.',a:['CDU mainboard battery dead or dislodged','Power loss during operation'],c:['This error means CDU data (positions, counts, configuration) has been lost and the CDU board needs to be reprogrammed.','The reprogramming requires special CDU programming software and cannot be done from the ATM keypad alone.','Contact Genmega technical support (or your ATM servicer) — they can either walk you through CDU reprogram via service laptop, or the board may need to be sent in.','Check the CDU mainboard battery — a flat coin cell battery causes this. Replace if voltage is below spec.'],to:['Genmega tech support contact','CDU programming software / service laptop'],src:'Genmega Error Code List — C0033: "CDU Encoder error — usually caused by loss of battery power to CDU mainboard."'},
+  'C0082':{t:'Shutter failure',s:'Cash dispenser shutter failed to open or close correctly.',a:['Shutter wiring loose','Shutter mechanism jammed','CDU mainboard connection'],c:['Power off ATM.','Check all wiring connections to the CDU mainboard — specifically the shutter solenoid connector.','Inspect the shutter mechanism for a jammed bill or foreign object blocking it.','Reinitialize the CDU from the operator menu (System Setup → Device Setup → CDU Initialize).','If the shutter physically does not move during initialization, the shutter solenoid or mechanism needs replacement.'],to:['Flashlight','Compressed air'],src:'Genmega Error Code List — C0082: "Shutter failure."'},
+  '20215':{t:'CDU detects bills before dispensing — CS2',s:'CS2 sensor is blocked during initialization — a jammed bill, debris, or dust is triggering it before a dispense has occurred.',a:['Jammed bill at CS2 sensor','Dust on CS2 sensor','Loose belt slipped over CS2'],c:['Power off ATM.','Open the vault. Locate the CS2 sensor near the front of the CDU (in the exit/gate area). Carefully check for any jammed or torn bills near it — remove gently.','If no bill is present: use compressed air to blow out the sensor. Dust and small debris are the most common cause.','Inspect all belts — a belt that has slipped off a roller can droop over a sensor and block it. Re-seat any slipped belts.','Power on. ATM should initialize normally. If the error persists after clearing, the CS2 sensor may be faulty.'],to:['Flashlight','Compressed air'],src:'Genmega Error Code List — 20215: "CDU detects bills prior to dispensing (CS2 sensor)."'},
+  'F0001':{t:'Bill count is zero',s:'The cassette bill count is set to zero — ATM will refuse to dispense.',a:['Cassette not yet counted in after loading','Settlement not updated after refill'],c:['Confirm cash is physically loaded in the cassette.','In operator menu → Settlement → Add Cassette: enter the number of bills you loaded and confirm. This sets the bill count.','If you see this after a cassette swap or refill, always run Add Cassette in Settlement — the ATM does not count bills automatically.'],to:['Access to Settlement menu'],src:'Genmega Error Code List — F0001: "Current Number of Bills is 0."'},
+  'F0009':{t:'Master key index invalid',s:'The master key index in Host Setup is missing or the checksum does not match.',a:['Master key not injected','Key injection incomplete','Wrong key index set'],c:['Go to operator menu → Host Setup → Master Key: check the key index and verify the checksum shown matches what your ISO/processor gave you.','If the checksum is wrong or missing: the master key needs to be re-injected. Contact your ISO or key injection service — this cannot be done from the keypad without the actual key.','Do not attempt to guess or manually type a key. Call your processor with the Terminal ID.'],to:['ISO / key injection service contact','Terminal ID'],src:'Genmega Error Code List — F0009: "Master Key index is invalid."'},
+  'D0090':{t:'Host cutoff / day-close (host response)',s:'Host processor reported day-close cutoff — ATM cannot process prior day business. This is a host-side response code, not a hardware problem.',a:['Host processor day-close in progress','Terminal ID / Routing ID mismatch','Processor configuration issue'],c:['This is not an ATM hardware fault. Do not disassemble anything.','Contact your ISO or processor directly with your Terminal ID. They will check whether the terminal is in a cutoff state and clear it.','While waiting: verify Terminal ID and Routing ID in operator menu → Host Setup match exactly what the processor has on file — even one digit off causes this.','If excessive: processor may need to re-synchronize your terminal day-close schedule.'],to:['Processor / ISO phone number','Terminal ID and Routing ID'],src:'Genmega Error Code List — D0090: "Cutoff complete for terminal; cannot process prior days business. Host-reported code."'},
+  'D1800':{t:'No dial tone',s:'Modem detected no dial tone on the phone line. Applies to dial-up / phone-line ATMs only.',a:['"LINE" port used instead of "PHONE" port','Phone line shared with another device','No dial tone at the wall jack'],c:['At the mainboard: confirm the phone line is plugged into the port labeled "LINE" not "PHONE."','Check the wall jack and phone line are not shared with a fax machine, POS terminal, or other phone device.','Plug a standard telephone handset into the same wall jack and listen for a dial tone. If no dial tone, the problem is with the phone line at the site — contact the phone carrier.','If there is a dial tone at the wall but not at the ATM: replace the phone cable between the wall and the ATM.'],to:['Standard telephone handset (to test line)','Replacement phone cable'],src:'Genmega Error Code List — D1800: "No dial tone."'},
+  'D0055':{t:'Invalid PIN (host response)',s:'Host rejected the PIN. Usually a customer error. On new installs, may indicate key binding issue.',a:['Customer PIN entry error (most common)','Master keys not correctly bound (new install)','Terminal ID not active with processor'],c:['If this is happening on a single transaction or occasionally: it is almost certainly a customer mistype. No ATM action needed.','If it is happening on every transaction or on multiple cards: go to operator menu → Host Setup and verify master keys have a valid checksum. Keys may need re-injection.','For new installs: call the processor with the Terminal ID to confirm the terminal is activated and keys are bound correctly on their end.'],to:['Processor contact for key verification'],src:'Genmega Error Code List — D0055: "Invalid PIN — on new installs verify master key binding."'},
+  'A0008':{t:'Paper cutter error',s:'Receipt printer paper cutter is jammed or has failed.',a:['Jammed paper at cutter blade','Cutter mechanism failure'],c:['Open the printer area. Look at the cutter mechanism for jammed or torn paper.','Use a business card or stiff paper to clear any jam — do NOT use metal tools near the cutter blade.','If you must remove the printer to access the jam: unplug the printer cable and slide the unit out.','After clearing, press the printer reset button and run a test print.','If the cutter jams repeatedly or does not move at all, the cutter mechanism needs service or replacement.'],to:['Business card to clear jam (no metal)'],src:'Genmega Error Code List — A0008: "Receipt paper cutter error."'},
+};
+
+// ─── HYOSUNG / NAUTILUS HYOSUNG ──────────────────────────────────────────────
+const HY = {
+  '400BC00':{t:'CDU binding mismatch',s:'Only one controller can be registered to dispense. Triggered when a dispenser is swapped, software is updated, or the CDU loses its pairing. CDU binding was made default in AP V06.02.10 (Feb 2022) — every software reload may require a CDU re-registration.',a:['CDU swapped without re-binding','Software update reset the binding','CDU board replaced'],c:['HARDWARE JUMPER METHOD (only method that reliably works in the field): Power the ATM completely off.','For 1K or 2K dispensers: locate the jumper header on the CDU board (inside the vault, on the dispenser PCB). Short pins 7+8 OR pins 1+2 — check your board for the label. Use a small jumper cap or a bent paper clip held firmly across the pins.','Power the ATM on with the jumper in place. Leave it running for 20 seconds — you will likely see an initializing screen.','Power the ATM completely off again. Remove the jumper.','Boot the ATM normally. The CDU binding is now cleared and the mainboard will re-register the dispenser on startup. Test with a dispense from operator menu.','For 4K dispensers (with reset button below dip switches): Power ATM off. Press and hold the reset button on the dispenser board. While holding it, power the ATM on. Hold for 20 seconds. Power off. Release button. Boot normally.','NOTE: If error returns after the next software update, repeat the hardware jumper procedure — AP V06.02.10+ re-enables binding after every update.'],to:['Small flathead screwdriver','Jumper cap or paper clip (for pins)','Flashlight to locate jumper pins on dispenser PCB'],src:'Field tech notes (gatelycrafts.com) and Prineta/Hyosung error code list. CDU binding default since AP V06.02.10 (Feb 18, 2022).'},
+  '4005500':{t:'CS13 note length timeout — bill jam',s:'A bill took too long to pass through the CS13/LS2 sensor during dispense — either a physical jam or a sensor blocked by debris.',a:['Bill jammed between cash tray and dispenser','Bill fragment at CS13/LS2 sensor','Dust on CS13/LS2 sensor'],c:['Power off the ATM.','Open the vault. Locate the path between the cash tray and the cash dispenser exit — this is where bills travel after being dispensed. Carefully remove any jammed bill or fragment. Use your fingers only — no tools near the sensor.','Move to the CS13/LS2 sensor position. On Hyosung machines CS13 is the main exit gate sensor near the dispenser opening. Check for a bill fragment or torn piece caught at the sensor.','Use compressed air to blow out the CS13 and LS2 sensor area — a thin layer of dust is enough to cause a length timeout.','Power on and run a test dispense from operator menu. The ATM should initialize cleanly.','If error returns: clean again with compressed air and inspect for torn bill fragments that may be very small and hard to see.'],to:['Flashlight','Compressed air can'],src:'Prineta/Hyosung ATM Error Code List — 4005500: "Timeout due to note length error passed through CS13 during dispense operation."'},
+  'F000A00':{t:'Master key empty',s:'The master (encryption) key has not been loaded. The ATM cannot process any transactions without it.',a:['New ATM never had keys injected','Keys lost after NVRAM clear or power failure','Board replacement without re-injection'],c:['This requires a formal key injection — it cannot be done from the ATM keypad alone.','Contact your ISO (Independent Sales Organization) or processor and tell them the ATM needs a master key injection. Provide them the Terminal ID and ATM serial number.','If you have a key injection device (KIF/KMS): connect it to the ATM EPP port and follow your processor injection procedure.','After key injection: go to operator menu → Host Setup → Master Key. Confirm the key index shows a valid checksum.','Do a test transaction to confirm the ATM is processing.','If this followed a NVRAM clear or mainboard replacement, you will also need to re-program all ATM settings after key injection.'],to:['ISO / processor contact information','Terminal ID and ATM serial number','Key injection device if you have one'],src:'Prineta/Hyosung ATM Error Code List — F000A00: "Master Key empty. Enter Master key. (required)."'},
+  '99999':{t:'NVRAM cleared — master password reset required',s:'NVRAM (non-volatile memory) has been wiped. Master password must be reset before the ATM can be re-programmed. Caused by mainboard battery loss, power surge, or a bootloader install.',a:['Mainboard battery dead (1800CE/5000CE/5300CE)','Power loss during operation','Bootloader / software update that cleared NVRAM'],c:['SE models (1800SE, 2700SE, etc.) — master password reset: Power ATM off. Remove the SD card. Open the vault door (do not touch the door position switch). Power the ATM on. Watch the screen closely. When you see "Please Wait While Initializing" (NOT "Please Wait While Loading"), you have about 5 seconds — press: Clear → Left Arrow → Right Arrow → Clear → Clear → Cancel. Press Yes to confirm the master password reset.','CE models (1800CE, 5000CE, 5300CE): Reboot while holding the top two left function keys (F1 and F2) on the side of the screen. Keep holding until prompted to reset the master password.','After reset: the master password is now 555555. Log in with it.','Go to operator menu → System Setup → System Control → Clear NVRAM. This finishes clearing bad data.','Re-program all ATM settings (Terminal ID, Host IP, denomination, surcharge, etc.) from your setup sheet.','NOTE: If error will not clear on 1800CE/5000CE/5300CE: the IO board battery (coin cell) may be dead — replace it and repeat.'],to:['ATM setup/programming sheet with all settings','Vault door access (must be open for CE password reset)'],src:'Prineta/Hyosung ATM Error Code List — 99999: "NVRAM is broken. Master password must be reset."'},
+  '40011':{t:'CS2 sensor dark — path blocked',s:'CS2 sensor detects a blockage during initialization or dispense — bill, debris, or reject box issue.',a:['Bill or fragment at CS2 sensor','Reject box not properly mounted (front-access models)','CS2 sensor cable loose'],c:['Open the vault. For front-access Hyosung models (1800CE/2700CE), the CS2 sensor is at the reject box area — confirm the reject box is fully and correctly mounted. A slightly unseated box causes CS2 to read dark.','Inspect the CS2 sensor area for any jammed bill or torn fragment. Remove carefully.','Use compressed air to clean the CS2 sensor glass. Even light dust causes dark detection.','Check the CS2 sensor cable connection on the CDU board — unplug and re-seat firmly.','Power on and initialize. If CS2 still reads dark after clearing: replace the CS2 sensor.'],to:['Flashlight','Compressed air','Replacement CS2 sensor if available'],src:'Hyosung Error Code List (ATM Depot) — 40011.'},
+  '40028':{t:'CS13 exit sensor blocked',s:'CS13 exit gate sensor detects a blockage before or during dispense.',a:['Bill at CS13 sensor','Dust on CS13','CS13 cable loose (CDU Board CN10 pins 1–4)'],c:['Power off ATM.','Open the vault. CS13 is the main exit gate sensor — it is positioned at the exit of the CDU where bills come out toward the customer. Inspect this area carefully for a jammed or torn note.','Remove any jammed bill gently with fingers — no tools.','Blow compressed air through the CS13 sensor area.','Reseat the CS13 cable at CDU Board connector CN10 (pins 1–4 — check your board label).','Power on and initialize. If still blocked: replace the CS13 sensor.'],to:['Flashlight','Compressed air','Replacement CS13 sensor if available'],src:'Hyosung Error Code List (ATM Depot) — 40028.'},
+  '40030':{t:'Main motor speed error',s:'Main motor speed out of specification — encoder slit or motor fault.',a:['CS8 encoder slit sensor displaced','Encoder wheel dirty or damaged','Main motor worn'],c:['Power off ATM.','Locate the CS8 encoder slit sensor on the CDU mainboard area. It reads a slotted disk (encoder wheel) on the main motor shaft.','Confirm the CS8 sensor bracket is properly seated and the cable is connected.','Inspect the encoder wheel slits — clean with dry compressed air. If a slit is cracked or the wheel is bent, the wheel needs replacement.','Power on and initialize. If the error clears, encoder was the issue.','If the motor spins but encoder is good: initialize once more, then power cycle. If still failing, the main motor needs replacement.'],to:['Flashlight','Compressed air','Replacement CS8 sensor or main motor if needed'],src:'Hyosung Error Code List (ATM Depot) — 40030.'},
+  '40040':{t:'Cassette(s) not detected',s:'One or more cassettes are not detected during dispense — seating or detection sensor issue.',a:['Cassette not fully seated','Detection sensors (CS7/CS17/CS33/CS43) dirty or damaged'],c:['Remove all cassettes. Inspect each cassette slot for debris, damage, or a cassette fragment.','Re-insert each cassette firmly and squarely. You should feel/hear it lock into position.','If a specific cassette is flagged in the error journal, focus on that slot.','Inspect the detection sensor for that slot (CS7 for cassette 1, CS17 for cassette 2, CS33 for cassette 3, CS43 for cassette 4). Clean with compressed air.','Power-cycle after reseating and test.'],to:['Flashlight'],src:'Hyosung Error Code List (ATM Depot) — 40040.'},
+  '40041':{t:'Re-drive limit exceeded (5 attempts)',s:'Dispenser tried to drive notes 5 times and failed — usually cash quality, dirty sensors, or dirty rollers.',a:['Reject box full or bills in it','Poor cash quality','Sensor dust (CS1AB, CS15AB, CS31AB, CS41AB)'],c:['Check the reject box first — if it contains notes, empty it. Even a few notes in the reject box can cause re-drive errors.','Remove the cassette and inspect the cash: remove torn, folded, stapled, or heavily worn bills. Fan and straighten remaining bills.','Use compressed air to clean sensors CS1AB, CS15AB, CS31AB, CS41AB (at the front of each cassette throat). Also check for dust in the main motor encoder slit.','In operator menu → diagnostics, check the note index values for each cassette — an incorrect index causes repeated mis-feeds.','Reload cassette and run a test dispense.'],to:['Compressed air','Flashlight'],src:'Hyosung Error Code List (ATM Depot) — 40041.'},
+  '40042':{t:'CS13 note count short',s:'Fewer notes passed CS13 than were requested — bills missing in the path or CS13 sensor issue.',a:['Bills jammed inside CDU','CS13 sensor dirty or failing','Notes in reject box reducing count'],c:['Empty the reject box and note count of rejected bills for reconciliation.','Open vault and inspect the full transport path for jammed notes. Remove any found.','Clean CS13 sensor with compressed air.','In diagnostics, check CS13 sensor polling — if it reads dark when path is clear, replace the sensor.','Run a test dispense.'],to:['Flashlight','Compressed air'],src:'Hyosung Error Code List (ATM Depot) — 40042.'},
+  '40046':{t:'CDU firmware / program error',s:'CDU software error — initialization failed, possibly due to corrupted firmware.',a:['CDU firmware corrupted','CDU board failure'],c:['Full power reset: power ATM completely off, wait 30 seconds, power back on. Let it initialize fully.','If error persists: the CDU firmware needs to be upgraded or re-downloaded. This requires the Hyosung firmware update tool and the correct firmware file for your model.','Contact your ATM servicer or Hyosung tech support (877-496-7864) to get the correct firmware file and upgrade procedure for your specific CDU version.','If firmware update does not resolve it: the CDU board needs replacement.'],to:['Hyosung tech support: 877-496-7864','Firmware update media for your model'],src:'Hyosung Error Code List (ATM Depot) — 40046.'},
+  '40047':{t:'Cassette 1 misfeed',s:'Cassette 1 failed to pick and feed a note.',a:['Cassette 1 empty or jammed','Pick rollers in cassette 1 worn','Notes not aligned'],c:['Remove cassette 1. Check if it is empty — replenish if so.','Inspect the cassette throat and pick mechanism for a jammed bill. Remove gently.','Fan and re-align all bills in the cassette. Bills that are not flush and even cause mis-feeds.','Wipe the cassette 1 pick rollers with IPA on a lint-free cloth. If rollers look glazed (shiny, no texture), replace them.','Re-seat cassette 1 firmly and run a test dispense.'],to:['IPA and lint-free cloth','Replacement pick rollers for cassette 1 if worn'],src:'Hyosung Error Code List (ATM Depot) — 40047.'},
+  '2000400':{t:'Vault door open',s:'Vault door is detected as open — door switch not actuating.',a:['Vault door not fully latched','Vault door switch damaged','Wiring to door switch loose'],c:['Push the vault door firmly closed. Listen and feel for the latch to fully engage.','Locate the vault door switch — check that closing the door presses the switch plunger fully. If the switch is not being pressed (door not making contact), adjust the door or switch position.','Inspect the wiring connector from the door switch to the mainboard. Unplug and re-seat.','If the door is fully closed but switch never trips, replace the door switch.'],to:['Flashlight','Replacement door switch if needed'],src:'Hyosung Error Code List (ATM Depot) — 2000400.'},
+  '2001000':{t:'Receipt paper jam',s:'Paper jammed in the receipt printer.',a:['Paper jammed in path','Wrong paper spec','Paper loaded incorrectly'],c:['Open the printer cover. Remove all jammed paper — use fingers or a stiff card, no metal tools.','Check for small torn fragments still inside the path — these cause repeat jams.','Reload paper ensuring the leading edge is straight and threads correctly through the roller.','Close the printer cover fully — it must latch. Run a test print from operator menu.','If jams repeat: inspect the cutter module and check paper weight matches the spec for your Hyosung model.'],to:['Correct paper roll for the Hyosung model','Stiff card (to clear fragments)'],src:'Hyosung Error Code List (ATM Depot) — 2001000.'},
+  '2001300':{t:'Receipt paper empty',s:'Printer is out of paper.',a:['Paper roll empty','Paper sensor blocked'],c:['Replace or reload the receipt paper roll. Thread it correctly through the print head and roller.','Close the printer cover fully and run a test print.','If paper is present but error persists: check the paper-out sensor for dust or obstruction. Blow with compressed air.'],to:['Correct paper roll for the Hyosung model'],src:'Hyosung Error Code List (ATM Depot) — 2001300.'},
+  '4DN00':{t:'CDU offline — communication failure',s:'ATM cannot communicate with the CDU — cable disconnected or CDU offline.',a:['CDU communication cable disconnected','CDU power issue','CDU board failure'],c:['In operator menu: do a Reset at Operator Function. Let the ATM reinitialize fully.','If error persists: power off ATM. Locate the CDU communication cable (runs from CDU board to mainboard). Unplug from both ends and firmly re-seat.','Power on. If still offline: the CDU board may need service or replacement. Contact your ATM servicer.'],to:['Flashlight','Replacement cable if available'],src:'Hyosung Error Code List (ATM Depot) — 4DN00.'},
+  '400FF00':{t:'Bill jam',s:'A bill is physically jammed somewhere in the cash dispenser.',a:['Bill jammed in transport path','Sensor blocked by debris'],c:['Power off ATM.','Open the vault. Systematically inspect the transport path from cassette exit all the way to the dispenser opening. Look in every bend, sensor gap, and roller junction.','Gently remove any jammed bill with fingers. Never force — a torn fragment left behind will cause the next jam.','After removing the jam: blow compressed air through the full path to clear any remaining debris.','Power on and initialize the ATM. If it initializes cleanly, run a test dispense.'],to:['Flashlight','Compressed air'],src:'Hyosung Error Code List (ATM Depot) — 400FF00: "Bill jam."'},
+  '8216091':{t:'Cash jammed on dispenser return path',s:'Bills are jammed on the CDU return path — bills that were retracted or rejected during a transaction got stuck.',a:['Jammed bills on return path','CS1–CS4 sensor dust'],c:['Power off ATM.','Open the vault. The return path runs from the exit gate back toward the reject bin area. Carefully remove any jammed notes from this path.','Use compressed air to clean sensors CS1, CS2, CS3, CS4 which are located along this return path.','Confirm the reject bin is mounted and seated correctly.','Power on and test.'],to:['Flashlight','Compressed air'],src:'Hyosung Error Code List (ATM Depot) — 8216091: "Cash jammed on Cash Dispenser."'},
+  '4004800':{t:'Dispensed note count mismatch',s:'The number of notes that actually passed CS13 does not match the number the ATM requested. Usually a CS13 sensor issue.',a:['CS13 note jam or partial obstruction','CS13 sensor dirty or failing'],c:['Open vault and inspect CS13 sensor area for a jammed or partially obstructed note.','Clean CS13 with compressed air.','Run a test dispense and check the journal — if the dispensed count is off, investigate further.','If the count mismatch continues after cleaning: replace the CS13 sensor.','IMPORTANT: Review the journal to determine if the customer received the correct amount. If a dispute is possible, report to your processor.'],to:['Flashlight','Compressed air','CS13 replacement sensor if available'],src:'Hyosung Error Code List (ATM Depot) — 4004800.'},
+  '2000100':{t:'No cassette detected',s:'Cassette is missing or not properly inserted.',a:['Cassette missing','Cassette not fully seated','Cassette detection sensor'],c:['Insert or re-insert the cassette firmly until it locks with a click.','If a cassette is inserted and still not detected: remove it, inspect for damage, and re-insert.','Clean the cassette detection sensor with compressed air.','Power-cycle and re-test.'],to:['Flashlight'],src:'Hyosung Error Code List — 2000100.'},
+  '2000200':{t:'Note shortage',s:'Cassette is at or near empty.',a:['Cassette empty or very low'],c:['Open vault and replenish the cassette with cash.','After loading, go to operator menu → Settlement → Add Cassette and enter the bill count you loaded.','Confirm with a test dispense.'],to:['Cash for replenishment'],src:'Hyosung Error Code List — 2000200.'},
+  '2000300':{t:'Reject bin full',s:'Reject bin is full — notes cannot be further rejected during dispense.',a:['Reject bin full','Counter not reset'],c:['Open vault and empty the reject bin. Record the note count for your books.','Run Cassette Total from the Settlement menu to reset the reject counter.','Re-test with a dispense.'],to:['Flashlight','Notepad to record rejected bill count'],src:'Hyosung Error Code List — 2000300.'},
+  '2001600':{t:'Note detected in stacker / presenter',s:'A note was detected in the stacker or presenter area before a dispense.',a:['Bill left in presenter from prior transaction','Shutter did not fully close'],c:['Open the vault or presenter area and carefully remove any note present in the stacker.','Check that the shutter is fully closed and latching properly.','Power-cycle and initialize. The ATM should clear and return to service.'],to:['Flashlight'],src:'Hyosung Error Code List — 2001600.'},
+};
+
+// ─── TRITON ──────────────────────────────────────────────────────────────────
+const TR = {
+  '101':{t:'Dispenser timeout',s:'Dispenser did not complete its operation within the allowed time.',a:['Note jam or obstruction in path','Worn pick rollers','Firmware mismatch between dispenser and mainboard'],c:['Power-cycle ATM and run a test dispense from the Triton operator menu (enter management functions).','If error returns: power off. Remove the cassette and inspect the transport path for jammed bills. Remove gently.','Inspect the dispenser pick rollers — if they are smooth or glazed (no texture), replace them. Worn rollers cannot grip bills reliably.','Confirm the dispenser firmware version matches what the Triton main board expects. Go to Management Functions → Diagnostics to view firmware versions. Update if they do not match using the Triton service laptop.','If error persists after all above: check the dispenser communication cable connection between the dispenser and the main board.'],to:['Flashlight','Triton service laptop for firmware check','Replacement pick roller kit'],src:'Triton ATM technical reference — error 101: dispenser timeout.'},
+  '132':{t:'Cassette not detected',s:'ATM cannot detect a cassette.',a:['Cassette not seated','Cassette-present sensor dirty or failing'],c:['Remove the cassette completely. Inspect for damage on the cassette and inside the bay.','Re-insert firmly until you hear/feel it click and lock.','If still not detected: wipe the cassette detection sensor inside the bay with a dry lint-free cloth.','Try a known-good spare cassette to determine if the cassette itself is the problem.','Power-cycle after re-seating and re-test.'],to:['Flashlight','Spare cassette for comparison'],src:'Triton ATM technical reference — error 132: cassette not present.'},
+  '144':{t:'Low cash',s:'Cassette is running low — below the low-cash threshold.',a:['Cassette nearly empty'],c:['Open vault and replenish the cassette with cash.','After loading: in operator menu (Management Functions → Cassette Setup or similar), confirm the bill count is updated.','Run a test dispense to confirm the ATM is serving customers.'],to:['Cash for replenishment'],src:'Triton ATM technical reference — error 144: low cash.'},
+  '33':{t:'Receipt paper jam',s:'Paper jam in the Triton receipt printer.',a:['Paper jammed in path','Wrong paper spec for Triton model','Paper loaded incorrectly'],c:['Open the printer cover. Remove all jammed paper — use fingers or a stiff card, not metal tools.','Check for tiny torn fragments inside the path.','Reload paper ensuring the correct weight and that it threads through the print head roller correctly.','Close printer cover and run a test print from Management Functions.','Repeated jams: verify you are using the correct paper specification for your Triton model.'],to:['Correct paper roll for Triton model','Stiff card to clear fragments'],src:'Triton ATM technical reference — error 33: receipt paper jam.'},
+  '205':{t:'SPED tamper detected',s:'The SPED (Secure PIN Entry Device / keypad) has detected a tamper condition.',a:['Physical keypad tamper attempt','Keypad replacement without clearing tamper','Serial number mismatch between keypad and mainboard'],c:['Go to Management Functions → Diagnostics → More Diagnostics → More(More) Diagnostics → Keypad. The Clear Tamper or Clear Serial Tamper option appears only when this error is active.','Select Clear Tamper (for tamper error 205) or Clear Serial Number (for serial mismatch error 239).','After clearing: the ATM should reinitialize normally.','If Clear Tamper does not appear in the menu: confirm you are running Triton software version RL 3.2.3 or later — older versions may not show this option.','After clearing, inspect the keypad physically for signs of actual tampering. If tamper was not from a legitimate replacement, escalate per your security policy.'],to:['Access to Triton management functions menu','Triton software version RL 3.2.3 or later'],src:'Triton ATM technical reference — errors 205 (SPED tamper) and 239 (SPED serial mismatch).'},
+  '239':{t:'SPED serial number mismatch',s:'The serial number of the connected keypad does not match what the terminal has stored. Usually occurs after a keypad replacement.',a:['Keypad replaced without clearing the old serial number','Keypad connection issue'],c:['Go to Management Functions → Diagnostics → More Diagnostics → More(More) Diagnostics → Keypad.','Select Clear Serial Tamper (appears only when error 239 is active).','After clearing: the new keypad serial number is written to the terminal and the ATM returns to service.','If the option does not appear: update Triton software to RL 3.2.3 or later.'],to:['Access to Triton management functions menu'],src:'Triton ATM technical reference — error 239: SPED serial number mismatch.'},
+};
+
+function getDB(brand) {
+  if (brand === 'Genmega' || brand === 'Hantle') return GM;
+  if (brand === 'Hyosung' || brand === 'Nautilus') return HY;
+  if (brand === 'Triton') return TR;
+  return {};
+}
+
+function findGuide(brand, input) {
+  const db = getDB(brand), q = input.toUpperCase().trim();
+  if (!q) return null;
+  if (db[q]) return { code: q, g: db[q], exact: true };
+  for (const k of Object.keys(db)) if (k.toUpperCase() === q) return { code: k, g: db[k], exact: true };
+  for (const k of Object.keys(db)) {
+    const ku = k.toUpperCase();
+    if (ku.endsWith(q) || ku.includes(q)) return { code: k, g: db[k], exact: false };
+  }
+  return null;
+}
+
+function getSuggestions(brand, input) {
+  const db = getDB(brand), q = input.toUpperCase().trim();
+  if (!q || q.length < 2) return [];
+  const out = [];
+  for (const k of Object.keys(db)) {
+    const ku = k.toUpperCase();
+    if (ku !== q && (ku.includes(q) || (q.length >= 3 && ku.endsWith(q.slice(-4))))) {
+      out.push({ code: k, g: db[k] });
+      if (out.length >= 5) break;
+    }
+  }
+  return out;
+}
+
+let suggestTimer = null;
+function updateSuggestions() {
+  clearTimeout(suggestTimer);
+  suggestTimer = setTimeout(() => {
+    const q = el('codeInput').value.trim(), brand = el('brand').value;
+    if (!q || q.length < 2) { el('suggestBox').style.display = 'none'; return; }
+    const exact = findGuide(brand, q);
+    if (exact && exact.exact) { el('suggestBox').style.display = 'none'; return; }
+    const list = getSuggestions(brand, q);
+    if (!list.length) { el('suggestBox').style.display = 'none'; return; }
+    const frag = document.createDocumentFragment();
+    list.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'suggest-item';
+      d.innerHTML = `<div><span class="suggest-code">${s.code}</span> <span class="suggest-title">${s.g.t}</span></div><span style="font-size:11px;color:var(--blue);font-weight:600">use →</span>`;
+      d.addEventListener('click', () => { el('codeInput').value = s.code; el('suggestBox').style.display = 'none'; });
+      frag.appendChild(d);
+    });
+    const box = el('suggestBox');
+    box.innerHTML = ''; box.appendChild(frag); box.style.display = 'block';
+  }, 250);
+}
+
+el('codeInput').addEventListener('input', () => { el('codeInput').classList.remove('err'); el('errHint').style.display = 'none'; updateSuggestions(); });
+el('brand').addEventListener('change', updateSuggestions);
+
+let imgB64 = null;
+el('btnCam').addEventListener('click', () => el('camInput').click());
+el('btnUp').addEventListener('click', () => el('fileInput').click());
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgB64 = e.target.result.split(',')[1];
+    el('previewImg').src = e.target.result;
+    el('previewWrap').style.display = 'block';
+    el('scanStatus').style.display = 'flex';
+    el('scanResultWrap').style.display = 'none';
+    el('orLabel').textContent = 'or adjust below';
+    scanImage(imgB64);
+  };
+  reader.readAsDataURL(file);
+}
+el('fileInput').addEventListener('change', e => handleFile(e.target.files[0]));
+el('camInput').addEventListener('change', e => handleFile(e.target.files[0]));
+el('btnRm').addEventListener('click', () => {
+  imgB64 = null; el('fileInput').value = ''; el('camInput').value = '';
+  el('previewWrap').style.display = 'none'; el('orLabel').textContent = 'or enter manually';
+});
+
+async function scanImage(b64) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
+          { type: 'text', text: 'ATM screen error photo. Respond ONLY with valid JSON:\n{"manufacturer":"Genmega|Hantle|Hyosung|Nautilus|Triton|Other","code":"exact error code","description":"brief description from screen","confidence":"high|medium|low"}' }
+        ]}] })
+    });
+    const data = await res.json();
+    const txt = (data.content || []).map(b => b.text || '').join('');
+    let p; try { p = JSON.parse(txt.replace(/```json|```/g, '').trim()); } catch { throw new Error('parse'); }
+    el('scanStatus').style.display = 'none'; el('scanResultWrap').style.display = 'block';
+    if (p && p.code) {
+      const sel = el('brand');
+      if (p.manufacturer && p.manufacturer !== 'Other') for (const o of sel.options) if (o.value.toLowerCase() === p.manufacturer.toLowerCase()) { sel.value = o.value; break; }
+      el('codeInput').value = p.code;
+      if (p.description) el('symptom').value = p.description;
+      const cl = p.confidence === 'high' ? 'high' : p.confidence === 'medium' ? 'medium' : 'low';
+      el('scanResultWrap').innerHTML = `<span class="conf-badge ${cl}">${p.confidence === 'high' ? 'Confident read' : 'Best read'}</span> <strong>${p.code}</strong>${p.manufacturer ? ' · ' + p.manufacturer : ''}${p.description ? '<br><span style="color:var(--muted);font-size:11px">' + p.description + '</span>' : ''}<br><span style="color:var(--blue);font-size:11px;font-weight:600">Fields filled — click Build repair guide</span>`;
+      updateSuggestions();
+    } else {
+      el('scanResultWrap').innerHTML = '<span style="color:var(--red)">Could not read a code from this image. Enter manually below.</span>';
+    }
+  } catch {
+    el('scanStatus').style.display = 'none'; el('scanResultWrap').style.display = 'block';
+    el('scanResultWrap').innerHTML = '<span style="color:var(--red)">Scan unavailable — enter code manually.</span>';
+  }
+}
+
+async function doLookup() {
+  const brand = el('brand').value, raw = el('codeInput').value.trim(), symptom = el('symptom').value.trim();
+  if (!raw) { el('codeInput').classList.add('err'); el('errHint').style.display = 'block'; return; }
+  el('suggestBox').style.display = 'none';
+  el('btnLookup').disabled = true;
+  el('btnLookup').innerHTML = '<div class="spinner"></div> Looking up…';
+
+  let result = findGuide(brand, raw);
+  if (!result && (brand === 'Hyosung' || brand === 'Nautilus')) {
+    try {
+      const d = await (await fetch('/api/hyosung?code=' + encodeURIComponent(raw))).json();
+      if (d.found) result = { code: raw, g: { t: raw, s: d.description, a: ['Hyosung component identified by this code', 'Related cables, sensors, or module', 'ATM event journal'], c: d.steps, to: ['Phone for error photo', 'Cleaning supplies / flashlight', 'Spare part only after checks'], src: 'ATM Depot Hyosung error-code reference.' }, exact: true };
+    } catch {}
+  }
+
+  el('btnLookup').disabled = false;
+  el('btnLookup').innerHTML = '<i class="ti ti-search"></i> Build repair guide';
+
+  const code = result ? result.code : raw.toUpperCase();
+  const g = result ? result.g : null;
+  const exact = result ? result.exact : false;
+  const brandLabel = (brand === 'Genmega' || brand === 'Hantle') ? brand + ' / Genmega platform' : brand;
+
+  el('chipCode').textContent = code;
+  el('chipBrand').textContent = brandLabel;
+  el('chipVerified').style.display = (g && exact) ? 'inline' : 'none';
+  el('chipPartial').style.display = (g && !exact) ? 'inline' : 'none';
+  el('resultTitle').textContent = g ? g.t : code + ' — no verified guide';
+  el('resultSummary').textContent = g ? g.s : 'No verified guide found. Use the research links and manufacturer manual.';
+
+  const checks = g ? g.c : ['Record the exact code, full screen text, date/time, and what the ATM was doing.', 'Check the manufacturer manual and event journal before clearing or replacing parts.'];
+  const areas  = g ? g.a : ['Manufacturer error-code table', 'ATM event journal', 'Manufacturer or processor support'];
+  const tools  = g ? g.to : ['Phone for screen photo', 'Manufacturer manual', 'Service notes'];
+
+  el('listChecks').innerHTML = checks.map(x => '<li>' + x + '</li>').join('');
+  el('listAreas').innerHTML  = areas.map(x => '<li>' + x + '</li>').join('');
+  el('listTools').innerHTML  = tools.map(x => '<li>' + x + '</li>').join('');
+  el('srcText').textContent  = g ? g.src : 'No matching guide. Links below search by manufacturer and code.';
+
+  const q = [brand, code, symptom].filter(Boolean).join(' ');
+  el('linkWeb').href    = 'https://www.google.com/search?q=' + encodeURIComponent(q + ' ATM error solution');
+  el('linkVideo').href  = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q + ' ATM repair');
+  el('linkManual').href = 'https://www.google.com/search?q=' + encodeURIComponent(brand + ' ATM application software manual PDF');
+
+  el('resultCard').classList.add('show');
+  el('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+el('btnLookup').addEventListener('click', doLookup);
+el('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLookup(); });
+el('btnNew').addEventListener('click', () => { el('resultCard').classList.remove('show'); el('codeInput').value = ''; el('symptom').value = ''; el('codeInput').focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+</script>
+</body>
+</html>
+
+<!-- BROWSE ALL CODES MODAL - appended -->
+<style>
+.browse-btn-wrap{text-align:center;padding:0 0 8px}
+.btn-browse{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;font-weight:600;padding:10px 20px;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--card);color:var(--ink);cursor:pointer;transition:background .12s}
+.btn-browse:hover{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.45);z-index:100;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--panel);border-radius:18px;width:100%;max-width:780px;overflow:hidden;box-shadow:0 8px 40px rgba(13,27,42,.18);margin:auto}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--panel);z-index:2}
+.modal-head h2{font-size:15px;font-weight:700}
+.modal-controls{display:flex;gap:8px;flex:1;max-width:480px}
+.modal-search{font:inherit;font-size:13px;color:var(--ink);flex:1;border:1px solid var(--border2);border-radius:var(--r);padding:8px 12px;background:var(--card)}
+.modal-search:focus{outline:none;border-color:var(--blue)}
+.modal-filter{font:inherit;font-size:12px;color:var(--ink);border:1px solid var(--border2);border-radius:var(--r);padding:8px 10px;background:var(--card);-webkit-appearance:none;appearance:none;cursor:pointer}
+.btn-modal-close{font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border:1px solid var(--border2);border-radius:var(--r);background:var(--card);color:var(--ink);cursor:pointer;flex-shrink:0}
+.modal-body{overflow-y:auto;max-height:calc(100vh - 160px)}
+.modal-table{width:100%;border-collapse:collapse}
+.modal-table thead th{padding:8px 14px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:left;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0}
+.modal-table tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.modal-table tbody tr:hover{background:var(--blue-bg)}
+.modal-table tbody tr:last-child{border-bottom:none}
+.modal-table td{padding:9px 14px;font-size:12px;line-height:1.4;vertical-align:top}
+.modal-table td:first-child{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink);white-space:nowrap;width:110px}
+.modal-table td:nth-child(2){font-size:11px;color:var(--muted);white-space:nowrap;width:100px}
+.modal-table td:nth-child(3){font-weight:500;color:var(--ink)}
+.modal-table td:last-child{color:var(--ink2);max-width:300px}
+.has-guide{background:var(--green-bg)!important}
+.modal-count{font-size:11px;color:var(--muted);padding:8px 14px;border-top:1px solid var(--border);text-align:center}
+.cat-badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
+.cat-badge.hw{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.cat-badge.net{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
+.cat-badge.host{background:#f3e8ff;border-color:#c4b5fd;color:#5b21b6}
+.cat-badge.cfg{background:#ecfdf5;border-color:#6ee7b7;color:#065f46}
+@media(max-width:600px){.modal-controls{flex-direction:column}.modal-table td:nth-child(2){display:none}}
+</style>
+
+<div class="browse-btn-wrap">
+  <button class="btn-browse" id="btnBrowse" type="button">
+    <i class="ti ti-list"></i> Browse all error codes
+  </button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>All Error Codes</h2>
+      <div class="modal-controls">
+        <input class="modal-search" id="modalSearch" placeholder="Search code or description…" autocomplete="off">
+        <select class="modal-filter" id="modalFilter">
+          <option value="">All manufacturers</option>
+          <option value="gm">Genmega / Hantle</option>
+          <option value="hy">Hyosung / Nautilus</option>
+          <option value="tr">Triton</option>
+        </select>
+      </div>
+      <button class="btn-modal-close" id="btnModalClose">Close</button>
+    </div>
+    <div class="modal-body">
+      <table class="modal-table">
+        <thead><tr><th>Code</th><th>Make</th><th>Description</th><th>Action</th></tr></thead>
+        <tbody id="modalTableBody"></tbody>
+      </table>
+      <div class="modal-count" id="modalCount"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+// ── Complete error code reference ──────────────────────────────────────────
+// Sources: Genmega Error Code List (bpsands.com PDF, official), 
+//          Hyosung Error Code List (atm24.com / Prineta source),
+//          Triton ATM Technical Reference
+// Format: [code, make, short_description, action, category]
+// make: gm=Genmega/Hantle, hy=Hyosung/Nautilus, tr=Triton
+// cat: hw=hardware, net=network, host=host/bank response, cfg=configuration
+const ALL_CODES = [
+// ── GENMEGA / HANTLE ──────────────────────────────────────────────────────
+['00000','gm','Normal — no error','No action needed','hw'],
+['20001','gm','No cassette detected','Remove and firmly re-insert cassette until it clicks','hw'],
+['20002','gm','Low cash level (~75 bills)','Replenish cassette; update count in Settlement → Add Cassette','hw'],
+['20003','gm','Reject bin full','Empty reject bin; run Settlement → Cassette Total','hw'],
+['20004','gm','Vault door open','Close vault door firmly; check door sensor switch','hw'],
+['20005','gm','CDU type mismatch','Check CDU type setting matches installed CDU','hw'],
+['20010','gm','Receipt paper jam','Open printer; remove jam with stiff card (no metal); reload 21lb paper','hw'],
+['20012','gm','Receipt printer feed lever open','Close the printer feed lever until it clicks','hw'],
+['20013','gm','Receipt paper empty','Replace receipt roll; ensure it feeds correctly under roller','hw'],
+['20014','gm','Thermal print head overheated','Wait 10 min to cool; press reset; test print; repeat overheats = service','hw'],
+['20016','gm','Note detected in CDU outlet','Clear notes at CDU outlet; clean CST rollers; verify cassette has cash','hw'],
+['20020','gm','No available cassette / outlet sensor blocked','Clear notes at CDU outlet or check outlet sensor','hw'],
+['20215','gm','Sensor blocked before dispense','Remove notes from dispenser; clean blocked sensor with compressed air','hw'],
+['21315','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['21A15','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['21B15','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['24A15','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['24B15','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['24B16','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['24B17','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['24B18','gm','Sensor blocked before dispense','Remove notes from dispenser; clean sensor','hw'],
+['A0101','gm','Printer feed lever open','Close feed lever','hw'],
+['A0102','gm','Print head overheated','Let cool; press reset; if repeats service printer','hw'],
+['A0103','gm','Receipt paper jam','Clear jam; reload paper roll','hw'],
+['A0104','gm','Paper load error','Remove and reinstall receipt roll correctly','hw'],
+['A0105','gm','Paper check error','Remove jammed paper; reload','hw'],
+['A0108','gm','Cutter SW check error','Inspect printer for paper jam at cutter','hw'],
+['A0801','gm','Receipt printer feed lever open','Close feed lever firmly','hw'],
+['A0802','gm','Print head overheated','Let cool; press reset','hw'],
+['A0803','gm','Receipt paper jam','Clear jam; reload roll','hw'],
+['A0804','gm','Paper setting error','Reinstall paper roll','hw'],
+['A0805','gm','Paper check error','Clear jam; reload roll','hw'],
+['A0808','gm','Cutter SW check error','Inspect for paper jam at cutter','hw'],
+['A0008','gm','Paper cutter error','Clear jam with business card (no metal); press reset; test print','hw'],
+['ADN01','gm','No response from printer (30s)','Check cable between mainboard and printer; check DIP switches','hw'],
+['ADN0F','gm','No response from printer (30s)','Check cable between mainboard and printer; check DIP switches','hw'],
+['ADN11','gm','No response from printer after 3 retries','Check cable; check DIP switches','hw'],
+['ADN12','gm','No response from printer (ENQ-ACK)','Check cable; check DIP switches','hw'],
+['ADN13','gm','No response from printer','Check cable; check DIP switches','hw'],
+['CDN00','gm','CDU no response (idle)','Check cable between mainboard and CDU; reseat both ends','hw'],
+['CDN01','gm','CDU did not respond to command','Check CDU cable connections; reseat','hw'],
+['CDN04','gm','CDU connection failure','Power off; reseat CDU ribbon cable both ends; check for interference','hw'],
+['CDN05','gm','Incompatible CDU detected','Check CDU type setting','hw'],
+['CDN06','gm','Invalid CDU DIP switch','Set CDU DIP switch to [ON OFF OFF OFF]','hw'],
+['CDN07','gm','CDU sync error (no key)','Sync with CDU from operator menu','hw'],
+['CDN0F','gm','CDU no response','Check CDU cable; reseat','hw'],
+['CDN11','gm','No response from CDU (3 retries)','Check CDU cable','hw'],
+['CDN12','gm','No response from CDU (ENQ-ACK)','Check CDU cable','hw'],
+['CDN13','gm','No response from CDU (timeout)','Check CDU cable','hw'],
+['C000F','gm','Note count mismatch','Check note path; review journal','hw'],
+['C0010','gm','No notes before presenting / PCAM sensor error','Check path before presenter; check PCAM sensor','hw'],
+['C0011','gm','Note jam at PCDU','Check and clear note path; clean sensors','hw'],
+['C0012','gm','Reject gate timing sensor blocked','Check and clear note path; clean RJT sensor','hw'],
+['C0013','gm','EJR/L & RJT blocked','Check note path; clean sensors','hw'],
+['C0016','gm','Note jam at stacker (presenting)','Clear jammed notes at presenter','hw'],
+['C0017','gm','Note jam at stacker (presenting)','Clear jammed notes at presenter','hw'],
+['C0018','gm','Note jam at exit (presenting)','Clear jammed notes at presenter exit','hw'],
+['C0019','gm','Exit sensor failure (PEXT)','Check exit sensor PEXT','hw'],
+['C0020','gm','Withdrawal timeout at presenter','Check note path; check presenter unit','hw'],
+['C0021','gm','Dbl-detect timing sensor blocked','Check note path; clean sensors','hw'],
+['C0022','gm','Inlet sensor CS1 blocked','Check note path; clean CS1 sensor','hw'],
+['C0025','gm','No notes at exit before retracting','Check note path; check presenter unit','hw'],
+['C0026','gm','Note jam at exit (retracting)','Clear notes at exit','hw'],
+['C0027','gm','Note jam at exit (retracting)','Clear notes at exit','hw'],
+['C0029','gm','Note jam at stacker (retracting)','Clear notes at stacker','hw'],
+['C0030','gm','Main motor failure / CDU not turning','Check CDU belts turn freely; check CS8 encoder; check motor','hw'],
+['C0031','gm','Sub main motor failure','Check sub main motor','hw'],
+['C0032','gm','Inlet sensor failure (2nd cassette)','Check SKLB/SKRB sensor at 2nd cassette','hw'],
+['C0034','gm','Note jam at stacker (retracting)','Clear notes at stacker','hw'],
+['C0035','gm','Jam at reject (retracting)','Clear notes at reject path','hw'],
+['C0036','gm','Exit/outlet sensor blocked at init','Clear notes at outlet sensor; clean sensors','hw'],
+['C0037','gm','Double-detect sensor error','Check and clean double-detect sensor','hw'],
+['C0039','gm','Reject diverter / solenoid failure','Check reject diverter and solenoid','hw'],
+['C003B','gm','Inlet sensor blocked at CST#2','Check cassette installation; check cassette switch','hw'],
+['C003C','gm','FEED sensor blocked at CST#2','Check note path; clean sensors','hw'],
+['C003E','gm','RJT sensor detects note before dispense','Check note path; clean sensors','hw'],
+['C0041','gm','5 attempts to dispense failed','Remove cassette; fan and inspect cash; clean rollers with IPA; check belts','hw'],
+['C0042','gm','Bill jam at stacker (initializing)','Clear notes at stacker; blow sensors with compressed air','hw'],
+['C0043','gm','Over 20 notes rejected in one transaction','Check Reject Analysis report; clean rollers; inspect cash quality','hw'],
+['C0044','gm','6–12 notes rejected consecutively','Check Reject Analysis; clean CS5 double-detect sensor; inspect cash','hw'],
+['C0045','gm','Note miscount detected','Check CDU data in journal for this transaction','hw'],
+['C0046','gm','Note jam at exit (initializing)','Clear notes at exit','hw'],
+['C0047','gm','CST#1 misfeed error','Clean cassette rollers with IPA; verify cassette has cash; fan bills','hw'],
+['C0048','gm','Note jam at reject (initializing)','Clear notes at reject path','hw'],
+['C004A','gm','Note jam at inlet of CST#1','Remove notes from dispenser inlet','hw'],
+['C004B','gm','Shutter failure to open at presenting','Check shutter open/close mechanism','hw'],
+['C004D','gm','CST#1 not detected','Check position of 1st cassette; check cassette switch','hw'],
+['C004E','gm','CST#2 not detected','Check position of 2nd cassette; check cassette switch','hw'],
+['C004F','gm','Timeout (over 85 sec) at dispensing','Check cassette installation and note alignment','hw'],
+['C0050','gm','Power failure at dispensing','Check CDU data in journal','hw'],
+['C0051','gm','Over 150 notes requested','Check CDU data in journal','hw'],
+['C0052','gm','CST#1 exit sensor blocked after dispense','Check 1st cassette exit sensor; clean','hw'],
+['C0053','gm','Double-check failure at dispensing','Check count sensor','hw'],
+['C0054','gm','Count sensor EJR/L blocked at dispensing','Check and clean count sensor','hw'],
+['C0055','gm','Count sensor EJR/L blocked at dispensing','Check and clean count sensor','hw'],
+['C0056','gm','Reject diverter failure at dispensing','Check reject diverter or solenoid','hw'],
+['C0057','gm','Reject diverter failure at reject','Check reject diverter or solenoid','hw'],
+['C0058','gm','Note count mismatch (reject < count)','Check note path','hw'],
+['C0059','gm','Note jam during initializing','Clear jammed notes','hw'],
+['C005B','gm','CST#2 misfeed error','Check 2nd cassette installation; fan and reload notes','hw'],
+['C005E','gm','Gate solenoid not activated to reject','Check reject diverter or solenoid','hw'],
+['C005F','gm','Timeout over 85s at dispensing (SCDU)','Check CDU control board','hw'],
+['C0060','gm','CST#3 exit sensor blocked after dispense','Check 3rd cassette exit sensor; clean','hw'],
+['C0062','gm','CST#3 exit sensor blocked','Check 3rd cassette exit sensor','hw'],
+['C006A','gm','No note from CST#2 at Dbl timing sensor','Check note path','hw'],
+['C006B','gm','CST#3 exit sensor blocked before dispense','Check 3rd cassette exit sensor','hw'],
+['C0070','gm','CST#4 exit sensor blocked after dispense','Check 4th cassette exit sensor; clean','hw'],
+['C0072','gm','CST#4 exit sensor blocked','Check 4th cassette exit sensor','hw'],
+['C007A','gm','No note from CST#4 at Dbl timing sensor','Check note path','hw'],
+['C007B','gm','CST#4 exit sensor blocked before dispense','Check note path and sensor','hw'],
+['C007C','gm','CST#4 misfeed error','Check 4th cassette installation; fan and reload notes','hw'],
+['C007D','gm','CST#4 not detected','Check 4th cassette installation; check cassette switch','hw'],
+['C0080','gm','CST#2 exit sensor blocked after dispense','Check 2nd cassette exit sensor; clean','hw'],
+['C0081','gm','Dbl-detect timing sensor blocked at dispense','Check double-detection timing sensor','hw'],
+['C0082','gm','No note from CST at Dbl timing sensor','Check note path; clean sensors','hw'],
+['C0083','gm','Reject gate timing sensor (L) blocked','Check and clean reject gate timing sensor L','hw'],
+['C0084','gm','Reject gate timing sensor (R) blocked','Check and clean reject gate timing sensor R','hw'],
+['C0085','gm','Note feed timeout (Dbl timing to GTRL)','Check note path and sensor between Dbl timing and GTRL','hw'],
+['C0086','gm','No note at count sensor at dispensing','Check note path; clean count sensor','hw'],
+['C0089','gm','CDU security error (key clear status)','Reset CDU security settings in operator menu','hw'],
+['C008A','gm','CDU sync error (key mismatch)','Sync CDU from operator menu','hw'],
+['C008B','gm','CDU security error','Check CDU security AP version','hw'],
+['C008C','gm','CDU security error at dispensing','Check CDU security AP version','hw'],
+['C008D','gm','Invalid CDU DIP switch','Set CDU DIP switch to [ON OFF OFF OFF]','hw'],
+['C008E','gm','Invalid CDU DIP switch','Set CDU DIP switch to [ON ON ON OFF]','hw'],
+['C008F','gm','CDU sync error (key saved)','Check main board','hw'],
+['C009A','gm','No note from CST#3 at Dbl timing sensor','Check note path; clean sensor','hw'],
+['C009D','gm','CST#3 not detected','Check 3rd cassette installation; check cassette switch','hw'],
+['C009F','gm','CST#3 misfeed error','Check 3rd cassette; fan and reload notes','hw'],
+['C00A0','gm','Shutter communication failure (sending)','Check connection between CDU and shutter','hw'],
+['C00A1','gm','Shutter communication failure (sending)','Check connection between CDU and shutter','hw'],
+['C00A2','gm','Shutter communication failure (receiving)','Check connection between CDU and shutter','hw'],
+['C00A3','gm','Shutter communication failure (receiving)','Check connection between CDU and shutter','hw'],
+['C00B3','gm','Shutter close failure','Check shutter open/close mechanism','hw'],
+['C00B4','gm','Shutter open failure','Check shutter open/close mechanism','hw'],
+['C00B5','gm','Shutter open failure (between sensors)','Check shutter sensors and mechanism','hw'],
+['D0001','gm','Modem initialization error','Check modem; clear voicemail on phone line','hw'],
+['D0002','gm','Reversal transaction failure','Check CDU data in journal for this transaction','host'],
+['D0011','gm','Unauthorized','Error from host processor — contact processor','host'],
+['D0012','gm','Invalid transaction','Error from host processor','host'],
+['D0013','gm','Invalid amount','Error from host processor','host'],
+['D0014','gm','Invalid card number','Error from host processor','host'],
+['D0015','gm','Transaction not accepted','Error from host processor','host'],
+['D0024','gm','Exceeds withdrawal limit','Error from host processor — customer limit exceeded','host'],
+['D0030','gm','Invalid transaction','Error from host processor','host'],
+['D0031','gm','Invalid amount','Error from host processor','host'],
+['D0039','gm','No credit account','Error from host processor','host'],
+['D0042','gm','No further withdrawals','Error from host processor — card blocked','host'],
+['D0050','gm','Incorrect PIN','Customer PIN entry error or host processor response','host'],
+['D0051','gm','Insufficient funds','Host processor response — customer account low','host'],
+['D0052','gm','No checking account','Host processor response','host'],
+['D0053','gm','No savings account','Host processor response','host'],
+['D0054','gm','Expired card','Host processor response','host'],
+['D0055','gm','Incorrect PIN / key binding issue','If on every card: check master key binding; call processor with Terminal ID','host'],
+['D0057','gm','Transaction not permitted (card)','Host processor response','host'],
+['D0058','gm','Transaction not permitted (terminal)','Verify ATM programming with processor','host'],
+['D0061','gm','Exceeds withdrawal limit','Host processor response','host'],
+['D0075','gm','PIN attempts exceeded','Host processor response — customer locked out','host'],
+['D0078','gm','No account','Host processor response','host'],
+['D0080','gm','Invalid date','Host processor response','host'],
+['D0083','gm','Cannot verify PIN','Contact host processor; verify programming','host'],
+['D0086','gm','Cannot verify PIN','Contact host processor; verify programming','host'],
+['D0090','gm','Host cutoff / day-close','Contact ISO or processor — not a hardware issue; verify Terminal and Routing IDs','host'],
+['D0091','gm','Bank unavailable','Host processor response — bank system down','host'],
+['D0092','gm','System unavailable','Host processor response','host'],
+['D0095','gm','Routing ID mismatch','Verify Routing ID in Host Setup matches processor','cfg'],
+['D0096','gm','Terminal ID mismatch','Verify Terminal ID in Host Setup matches processor','cfg'],
+['D0300','gm','Modem not responding','Run modem diagnostic from operator menu; power cycle','hw'],
+['D1100','gm','Cannot receive ENQ from host','Check programming; check modem via diagnostics','net'],
+['D1200','gm','Transmission error','Check modem; clear voicemail on phone line','net'],
+['D1300','gm','Receiving NAK more than 3 times','Contact host processor','net'],
+['D1500','gm','Modem connection timeout','Check telephone line; check modem via diagnostics','net'],
+['D1700','gm','Com error (call dropped)','Verify programming; check telephone line quality','net'],
+['D1800','gm','No dial tone','Verify phone line is in LINE port not PHONE port on mainboard','net'],
+['D1900','gm','No answer','Verify programming; check phone line quality','net'],
+['D2000','gm','Phone line busy','Verify programming; check phone line','net'],
+['D2100','gm','Modem timeout (30s) while initializing','Check modem via diagnostics','net'],
+['D2200','gm','Not receiving EOT from host','Verify programming; check modem','net'],
+['D2300','gm','No response (dialing timeout)','Verify programming; check modem','net'],
+['D2500','gm','Cannot connect to host','Verify TCP/IP settings; confirm Host IP; check internet','net'],
+['D2501','gm','Cannot connect to host','Verify TCP/IP settings; check internet','net'],
+['D2510','gm','Timeout while sending data','Power-cycle modem/router; verify internet; call processor','net'],
+['D2511','gm','Communication error while sending','Power-cycle modem/router; toggle DHCP; check Ethernet cable; run comms test','net'],
+['D2512','gm','Socket error while sending','Check TCP/IP settings; check internet','net'],
+['D2513','gm','Timeout while receiving data','Power-cycle modem/router; check internet; call processor','net'],
+['D2514','gm','Communication error while receiving','Check TCP/IP settings; check internet','net'],
+['D2515','gm','Socket error while receiving','Check TCP/IP settings','net'],
+['D2516','gm','Socket error / encryption error','Check TCP/IP settings; may be SSL cert issue with processor','net'],
+['D2600','gm','SSL cert file read error','Load SSL certification file from operator menu','cfg'],
+['D2601','gm','SSL cert verify error','Check certification file is loaded correctly','cfg'],
+['D2610','gm','SSL certificate expired','Obtain and load updated SSL certification file','cfg'],
+['D2651','gm','Hostname verification failure','Check hostname in Host Setup','cfg'],
+['F0001','gm','Bill count is zero','Load cash; use Settlement → Add Cassette to enter bill count','cfg'],
+['F0002','gm','Surcharge owner not set','Set surcharge owner in Customer Setup','cfg'],
+['F0003','gm','Surcharge amount not set','Set surcharge amount in Customer Setup','cfg'],
+['F0007','gm','Denomination not set','Set denomination in Transaction Setup','cfg'],
+['F0008','gm','Fast cash not set','Set fast cash values in Transaction Setup','cfg'],
+['F0009','gm','Master key index invalid','Check and set master key index in Host Setup; verify checksum','cfg'],
+['F000A','gm','Master key empty','Re-inject master key via ISO/processor; verify checksum in Host Setup','cfg'],
+['F000B','gm','Host phone number not set','Enter host phone number in Host Setup (dial-up ATMs)','cfg'],
+['F000C','gm','Error retry timer not set','Set error retry timer in Host Setup','cfg'],
+['F000F','gm','Terminal ID not set','Enter Terminal ID in Host Setup','cfg'],
+['F0010','gm','Routing ID not set','Enter Routing ID in Host Setup','cfg'],
+['F0011','gm','Master key serial number not set','Enter master key serial number in Host Setup','cfg'],
+['F0014','gm','NVRAM failure (critical)','Replace mainboard — fatal memory failure','hw'],
+['F0015','gm','ATM serial number empty','Set serial number in System Setup','cfg'],
+['F0016','gm','Default master password not changed','Change default master password in System Setup','cfg'],
+['F0017','gm','Abnormal system clock','Check and correct system clock in System Setup','cfg'],
+['F0020','gm','Host IP address not entered','Set host IP address in Host Setup','cfg'],
+['F0022','gm','SSL activation code not valid','Check and re-enter SSL activation code','cfg'],
+['F0030','gm','EPP secure mode password set to default','Change default EPP secure password','cfg'],
+['F0031','gm','PINPAD NPK not set','Check EPP device in diagnostics','hw'],
+['F0032','gm','EPP set to maintenance mode','Set EPP to operation mode via keypad diagnostics','hw'],
+['F0033','gm','PINPAD TK checksum mismatch','Check EPP device','hw'],
+['TOUCH','gm','Touchscreen failure','Check touchscreen cable; check touchscreen in diagnostics','hw'],
+['NOCON','gm','Device communication error','Check all device connections; reseat cables','hw'],
+['PDN01','gm','PINPAD communication error','Check EPP status and cable connection','hw'],
+['MDN01','gm','Card reader communication error','Check card reader status and cable','hw'],
+['EMCER','gm','Card reader: EMV chip read failure','Try card again; wipe chip contacts on card; check card reader','hw'],
+['IAE01','gm','Internal application error','Reload application software','hw'],
+// ── HYOSUNG / NAUTILUS ────────────────────────────────────────────────────
+['400BC00','hy','CDU binding / controller auth failure','Hardware jumper method: power off; short pins 7+8 or 1+2 on CDU board; power on 20s; power off; remove jumper; boot normally','hw'],
+['4005500','hy','CS13 note length timeout — bill jam','Power off; clear jammed note between tray and dispenser; clean CS13/LS2 sensor with compressed air; power on','hw'],
+['F000A00','hy','Master key empty','Contact ISO/processor for key injection; cannot be done from keypad','cfg'],
+['99999','hy','NVRAM cleared — master password reset needed','SE: Clear→Left→Right→Clear→Clear→Cancel at Initializing screen. CE: hold F1+F2 at boot. Password resets to 555555','cfg'],
+['40000','hy','Unknown CDU command received','Check CDU firmware version; update if behind','hw'],
+['40011','hy','CS2 sensor dark — path blocked','Check reject box mounting; remove debris at CS2; clean CS2 sensor; reseat CS2 cable','hw'],
+['40028','hy','CS13 exit sensor blocked','Remove jammed note at CS13 exit; clean sensor; reseat CS13 cable at CDU CN10 pins 1-4','hw'],
+['40030','hy','Main motor speed error','Check CS8 encoder wheel slit; clean; inspect sensor bracket; replace if needed','hw'],
+['40040','hy','Cassette(s) not detected','Re-seat all cassettes firmly; clean detection sensors CS7/CS17/CS33/CS43; power-cycle','hw'],
+['40041','hy','Re-drive limit exceeded (5 attempts)','Empty reject box; fan and clean cash; blow CS1AB/CS15AB/CS31AB/CS41AB with compressed air','hw'],
+['40042','hy','CS13 note count short','Empty reject box; remove jammed notes; clean CS13 sensor','hw'],
+['40046','hy','CDU firmware / program error','Full power reset; upgrade CDU firmware; replace CDU board if persists','hw'],
+['40047','hy','Cassette 1 misfeed','Remove cassette 1; inspect for jams; fan bills; clean pick rollers with IPA; reseat','hw'],
+['97400','hy','Fail to open device port','Reset at Operator Function; reboot ATM; check device cable connections','hw'],
+['2000100','hy','No cassette detected','Insert or re-seat cassette; clean detection sensor','hw'],
+['2000200','hy','Note shortage','Replenish cassette; update count in Settlement → Add Cassette','hw'],
+['2000300','hy','Reject bin full','Empty reject bin; run Cassette Total in Settlement','hw'],
+['2000400','hy','Vault door open','Close vault door firmly; check door switch; reseat door switch wiring','hw'],
+['2001000','hy','Receipt paper jam','Remove jammed paper; check for fragments; reload paper; run test print','hw'],
+['2001300','hy','Receipt paper empty','Replace paper roll; thread correctly through head roller; test print','hw'],
+['2001600','hy','Note detected in stacker / presenter','Remove note from stacker area; check shutter; power-cycle and initialize','hw'],
+['400FF00','hy','Bill jam','Power off; inspect full transport path; remove jam; blow compressed air; power on','hw'],
+['4004800','hy','Dispensed note count mismatch','Inspect CS13 for jammed note; clean CS13; check journal for dispense discrepancy','hw'],
+['4DN00','hy','CDU offline / communication failure','Reset at Operator Function; reseat CDU communication cable; reboot','hw'],
+['8216091','hy','Cash jammed on return path','Remove jammed notes from return path; clean CS1–CS4 sensors; retest','hw'],
+['9799901','hy','Door check error','Reboot ATM; confirm vault door is fully closed; contact technician if persists','hw'],
+// ── TRITON ────────────────────────────────────────────────────────────────
+['33','tr','Receipt paper jam','Open printer; remove jam with stiff card; reload correct paper; test print','hw'],
+['101','tr','Dispenser timeout','Power-cycle; test dispense; clear transport path; check pick rollers; check firmware','hw'],
+['132','tr','Cassette not detected','Re-insert cassette firmly; clean detection sensor; try spare cassette','hw'],
+['144','tr','Low cash','Replenish cassette; update bill count in Settlement','hw'],
+['205','tr','SPED tamper detected','Go to Management Functions → Diagnostics → Keypad → Clear Tamper','hw'],
+['239','tr','SPED serial number mismatch','Go to Management Functions → Diagnostics → Keypad → Clear Serial Tamper','hw'],
+['3','tr','Receipt paper out','Replace paper roll','hw'],
+['45','tr','Cash dispenser error','Power-cycle; clear jam; clean sensors; test dispense','hw'],
+['70','tr','Modem no answer','Check phone line; verify host phone number','net'],
+['111','tr','Note jam','Clear jammed note from dispenser path; clean sensors','hw'],
+['121','tr','Reject bin full','Empty reject bin','hw'],
+['135','tr','Cassette 2 not detected','Re-seat 2nd cassette; check detection sensor','hw'],
+['186','tr','Communication error','Check internet/modem connection; verify host settings','net'],
+['621','tr','Keypad error / replace keypad','One green light on keypad = replace keypad; call Triton tech support','hw'],
+];
+
+const makeLabels = {gm:'Genmega/Hantle', hy:'Hyosung/Nautilus', tr:'Triton'};
+const catLabels = {hw:'Hardware', net:'Network', host:'Host/Bank', cfg:'Config'};
+
+// Find if a code has a detailed guide
+function hasDetailedGuide(code, make) {
+  // This will be set by the outer script's getDB function check
+  return false; // simplified - highlight will come from data attr
+}
+
+let filteredCodes = [...ALL_CODES];
+
+function renderTable(codes) {
+  const tbody = document.getElementById('modalTableBody');
+  if (!codes.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">No codes match your search.</td></tr>';
+    document.getElementById('modalCount').textContent = '0 codes found';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  codes.forEach(([code, make, desc, action, cat]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${code}</td><td><span class="cat-badge ${cat}">${catLabels[cat]||cat}</span><br><span style="font-size:10px;color:var(--muted)">${makeLabels[make]||make}</span></td><td>${desc}</td><td>${action}</td>`;
+    tr.addEventListener('click', () => {
+      // Pre-fill the search form and close modal
+      const brandSel = document.getElementById('brand');
+      if (make === 'gm') brandSel.value = 'Genmega';
+      else if (make === 'hy') brandSel.value = 'Hyosung';
+      else if (make === 'tr') brandSel.value = 'Triton';
+      document.getElementById('codeInput').value = code;
+      closeModal();
+      document.getElementById('btnLookup').click();
+    });
+    frag.appendChild(tr);
+  });
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+  document.getElementById('modalCount').textContent = `${codes.length} of ${ALL_CODES.length} codes shown — click any row to build a full repair guide`;
+}
+
+function filterCodes() {
+  const q = document.getElementById('modalSearch').value.trim().toLowerCase();
+  const mf = document.getElementById('modalFilter').value;
+  filteredCodes = ALL_CODES.filter(([code, make, desc, action]) => {
+    if (mf && make !== mf) return false;
+    if (!q) return true;
+    return code.toLowerCase().includes(q) || desc.toLowerCase().includes(q) || action.toLowerCase().includes(q);
+  });
+  renderTable(filteredCodes);
+}
+
+function openModal() {
+  document.getElementById('modalSearch').value = '';
+  document.getElementById('modalFilter').value = '';
+  filteredCodes = [...ALL_CODES];
+  renderTable(filteredCodes);
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('modalSearch').focus();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+document.getElementById('btnBrowse').addEventListener('click', openModal);
+document.getElementById('btnModalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
+document.getElementById('modalSearch').addEventListener('input', filterCodes);
+document.getElementById('modalFilter').addEventListener('change', filterCodes);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+})();
+</script>
